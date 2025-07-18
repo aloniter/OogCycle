@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OogCycle - Period Tracking</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Simple, cute, and user-friendly period tracking app">
+    <meta name="theme-color" content="#FFB6C1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OogCycle">
+    
+    <!-- PWA Icons -->
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">🌸 OogCycle</h1>
+                <div class="header-actions">
+                    <button class="btn-icon" id="settings-btn" aria-label="Settings">
+                        ⚙️
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Calendar Navigation -->
+            <div class="calendar-nav">
+                <button class="nav-btn" id="prev-month" aria-label="Previous month">
+                    ←
+                </button>
+                <h2 class="current-month" id="current-month">
+                    <!-- Will be populated by JavaScript -->
+                </h2>
+                <button class="nav-btn" id="next-month" aria-label="Next month">
+                    →
+                </button>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="calendar-container">
+                <div class="calendar-grid" id="calendar-grid">
+                    <!-- Calendar will be populated by JavaScript -->
+                </div>
+                
+                <!-- Calendar Legend -->
+                <div class="calendar-legend">
+                    <div class="legend-item">
+                        <div class="legend-color period"></div>
+                        <span>Period</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color predicted-period"></div>
+                        <span>Predicted Period</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color ovulation"></div>
+                        <span>Ovulation</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color predicted-ovulation"></div>
+                        <span>Predicted Ovulation</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color fertile-window"></div>
+                        <span>Fertile Window</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="action-btn primary" id="log-period-btn">
+                    🩸 Log Period
+                </button>
+                <button class="action-btn secondary" id="track-mood-btn">
+                    💭 Track Mood
+                </button>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-view="calendar">
+                📅 Calendar
+            </button>
+            <button class="nav-item" data-view="insights">
+                📊 Insights
+            </button>
+            <button class="nav-item" data-view="settings">
+                ⚙️ Settings
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modals will be added here -->
+    <div id="modal-container"></div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner">🌸</div>
+            <p>Loading OogCycle...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html> 
