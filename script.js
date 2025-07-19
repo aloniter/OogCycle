@@ -250,7 +250,9 @@ class OogCycleApp {
     }
 
     showDayModal(dateStr) {
-        const date = new Date(dateStr);
+        // Parse date correctly to avoid timezone offset issues
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
         const dayData = this.cycleData[dateStr] || {};
         const predictions = this.predictions[dateStr] || {};
         
