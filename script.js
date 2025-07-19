@@ -187,7 +187,9 @@ class OogCycleApp {
         if (dayElement.classList.contains('other-month')) return;
         
         const dateStr = dayElement.dataset.date;
-        this.selectedDate = new Date(dateStr);
+        // Correctly parse the date string to avoid timezone issues.
+        const [year, month, day] = dateStr.split('-').map(Number);
+        this.selectedDate = new Date(year, month - 1, day);
         
         // Show quick action modal for the selected day
         this.showDayModal(dateStr);
