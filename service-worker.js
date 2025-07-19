@@ -1,18 +1,13 @@
 // ===== SERVICE WORKER FOR OOGCYCLE =====
 
-const CACHE_NAME = 'oogcycle-v1';
+const CACHE_NAME = 'oogcycle-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/manifest.json',
-  // Add icon paths when they're created
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/icons/apple-touch-icon.png',
-  '/icons/favicon-32x32.png',
-  '/icons/favicon-16x16.png'
+  '/OogCycle/',
+  '/OogCycle/index.html',
+  '/OogCycle/style.css',
+  '/OogCycle/script.js',
+  '/OogCycle/manifest.json',
+  '/OogCycle/icon.png'
 ];
 
 // Install event - cache resources
@@ -61,7 +56,7 @@ self.addEventListener('fetch', event => {
           .catch(() => {
             // Network failed, try to serve offline page if available
             if (event.request.destination === 'document') {
-              return caches.match('/index.html');
+              return caches.match('/OogCycle/index.html');
             }
           });
       })
