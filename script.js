@@ -1,4 +1,26 @@
-// ===== OOGCYCLE APP - MAIN SCRIPT =====
+/**
+ * ===== OOGCYCLE APP - MAIN SCRIPT =====
+ * 
+ * Enhanced Period Tracking App with Blood Flow Indicators, Mood Logging, and Notes
+ * 
+ * Features:
+ * - Daily logging with visual calendar indicators
+ * - Blood flow tracking (1-3 drops for light/medium/heavy)
+ * - Enhanced mood tracking with 9 mood options
+ * - Notes for symptoms and observations
+ * - Period and ovulation tracking with predictions
+ * - Modern, mobile-friendly UI with pastel colors
+ * - Local storage with fast retrieval
+ * 
+ * Data Structure:
+ * cycleData[dateStr] = {
+ *   period: boolean,
+ *   ovulation: boolean,
+ *   flow: number (1-3, only if period=true),
+ *   mood: string (happy/sad/anxious/etc),
+ *   notes: string
+ * }
+ */
 
 class OogCycleApp {
     constructor() {
@@ -6,9 +28,14 @@ class OogCycleApp {
         this.selectedDate = null;
         this.cycleData = this.loadCycleData();
         this.predictions = this.calculatePredictions();
+        this.notesTimeout = null; // For debouncing notes saves
         this.init();
     }
 
+    /**
+     * Initialize the application
+     * Sets up event listeners, renders the initial calendar, and handles loading screen
+     */
     init() {
         this.setupEventListeners();
         this.renderCalendar();
@@ -28,11 +55,11 @@ class OogCycleApp {
 
         // Quick actions
         document.getElementById('log-period-btn').addEventListener('click', () => {
-            this.showPeriodModal();
+            this.quickLogToday();
         });
 
         document.getElementById('track-mood-btn').addEventListener('click', () => {
-            this.showMoodModal();
+            this.quickTrackTodayMood();
         });
 
         // Bottom navigation
@@ -56,6 +83,11 @@ class OogCycleApp {
     }
 
     // ===== CALENDAR RENDERING =====
+    /**
+     * Renders the main calendar with all days, indicators, and predictions
+     * Shows visual indicators for period, ovulation, mood, flow, and notes
+     * Handles both current month days and adjacent month days for context
+     */
     renderCalendar() {
         const calendar = document.getElementById('calendar-grid');
         const monthTitle = document.getElementById('current-month');
@@ -148,8 +180,10 @@ class OogCycleApp {
             }
             
             dayElement.innerHTML = `
-                <span class="day-number">${day}</span>
-                ${dayData && dayData.mood ? `<span class="day-indicator"></span>` : ''}
+                <div class="calendar-day-content">
+                    <span class="day-number">${day}</span>
+                    ${this.renderDayIndicators(dayData)}
+                </div>
             `;
             
             calendar.appendChild(dayElement);
@@ -163,6 +197,55 @@ class OogCycleApp {
             emptyDay.innerHTML = `<span class="day-number">${day}</span>`;
             calendar.appendChild(emptyDay);
         }
+    }
+
+    // ===== DAY INDICATORS RENDERING =====
+    renderDayIndicators(dayData) {
+        if (!dayData) return '';
+        
+        const indicators = [];
+        
+        // Add flow indicator
+        if (dayData.flow) {
+            const flowLevel = dayData.flow;
+            let flowIcon = '';
+            if (flowLevel === 1) flowIcon = '💧';
+            else if (flowLevel === 2) flowIcon = '💧💧';
+            else if (flowLevel === 3) flowIcon = '💧💧💧';
+            
+            if (flowIcon) {
+                indicators.push(`<span class="flow-indicator" title="Flow: ${flowLevel} drops">${flowIcon}</span>`);
+            }
+        }
+        
+        // Add mood indicator
+        if (dayData.mood) {
+            const moodEmojis = {
+                'happy': '😊',
+                'excited': '🤩', 
+                'calm': '😌',
+                'sad': '😢',
+                'anxious': '😰',
+                'angry': '😠',
+                'tired': '😴',
+                'energetic': '⚡',
+                'cranky': '😤'
+            };
+            
+            const moodEmoji = moodEmojis[dayData.mood] || '💭';
+            indicators.push(`<span class="mood-indicator" title="Mood: ${dayData.mood}">${moodEmoji}</span>`);
+        }
+        
+        // Add notes indicator
+        if (dayData.notes && dayData.notes.trim()) {
+            indicators.push(`<span class="notes-indicator" title="Has notes">📝</span>`);
+        }
+        
+        if (indicators.length > 0) {
+            return `<div class="day-indicators">${indicators.join('')}</div>`;
+        }
+        
+        return '';
     }
 
     // ===== NAVIGATION =====
@@ -191,8 +274,8 @@ class OogCycleApp {
         const [year, month, day] = dateStr.split('-').map(Number);
         this.selectedDate = new Date(year, month - 1, day);
         
-        // Show quick action modal for the selected day
-        this.showDayModal(dateStr);
+        // Show enhanced daily log modal for the selected day
+        this.showDailyLogModal(dateStr);
     }
 
     // ===== MODAL FUNCTIONS =====
@@ -251,7 +334,7 @@ class OogCycleApp {
         this.showModal(modal);
     }
 
-    showDayModal(dateStr) {
+    showDailyLogModal(dateStr) {
         // Parse date correctly to avoid timezone offset issues
         const [year, month, day] = dateStr.split('-').map(Number);
         const date = new Date(year, month - 1, day);
@@ -269,45 +352,120 @@ class OogCycleApp {
             predictionInfo += '<p class="prediction-info">🌟 Fertile window</p>';
         }
         
-        // Check if there's any data to delete
-        const hasData = dayData.period || dayData.ovulation || dayData.mood;
-        
-        const modal = this.createModal('Day Details', `
+        const modal = this.createModal('Daily Log', `
             <div class="modal-content">
                 <h3>📅 ${date.toDateString()}</h3>
                 ${predictionInfo}
                 
-                ${hasData ? `<div class="current-data">
-                    <h4>Current Data:</h4>
-                    ${dayData.period ? '<span class="data-tag period-tag">🩸 Period</span>' : ''}
-                    ${dayData.ovulation ? '<span class="data-tag ovulation-tag">🥚 Ovulation</span>' : ''}
-                    ${dayData.mood ? `<span class="data-tag mood-tag">💭 ${dayData.mood}</span>` : ''}
-                </div>` : ''}
-                
-                <div class="day-actions">
-                    <button class="modal-btn ${dayData.period ? 'active' : ''}" 
-                            onclick="app.togglePeriod('${dateStr}')">
-                        🩸 Period
-                    </button>
-                    <button class="modal-btn ${dayData.ovulation ? 'active' : ''}" 
-                            onclick="app.toggleOvulation('${dateStr}')">
-                        🥚 Ovulation
-                    </button>
-                    <button class="modal-btn" onclick="app.showMoodModalForDate('${dateStr}')">
-                        💭 Mood
-                    </button>
+                <div class="daily-log-sections">
+                    <!-- Period & Flow Section -->
+                    <div class="log-section">
+                        <div class="section-title">
+                            🩸 Period & Flow
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem;">
+                            <button class="modal-btn ${dayData.period ? 'active' : ''}" 
+                                    onclick="app.togglePeriod('${dateStr}')">
+                                ${dayData.period ? '✓ Period Day' : 'Mark as Period Day'}
+                            </button>
+                        </div>
+                        
+                        ${dayData.period ? `
+                            <div class="flow-indicators">
+                                <div class="flow-option ${dayData.flow === 1 ? 'selected' : ''}" 
+                                     onclick="app.setFlow('${dateStr}', 1)">
+                                    <div class="flow-drops">💧</div>
+                                    <div class="flow-label">Light</div>
+                                </div>
+                                <div class="flow-option ${dayData.flow === 2 ? 'selected' : ''}" 
+                                     onclick="app.setFlow('${dateStr}', 2)">
+                                    <div class="flow-drops">💧💧</div>
+                                    <div class="flow-label">Medium</div>
+                                </div>
+                                <div class="flow-option ${dayData.flow === 3 ? 'selected' : ''}" 
+                                     onclick="app.setFlow('${dateStr}', 3)">
+                                    <div class="flow-drops">💧💧💧</div>
+                                    <div class="flow-label">Heavy</div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- Mood Section -->
+                    <div class="log-section">
+                        <div class="section-title">
+                            💭 How are you feeling?
+                        </div>
+                        
+                        <div class="mood-grid">
+                            ${this.renderMoodOptions(dateStr, dayData.mood)}
+                        </div>
+                    </div>
+                    
+                    <!-- Notes Section -->
+                    <div class="log-section">
+                        <div class="section-title">
+                            📝 Notes
+                        </div>
+                        <div class="notes-section">
+                            <textarea class="notes-input" 
+                                      placeholder="Any symptoms, thoughts, or observations..."
+                                      onchange="app.saveNotes('${dateStr}', this.value)">${dayData.notes || ''}</textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Other Tracking -->
+                    <div class="log-section">
+                        <div class="section-title">
+                            🌟 Other Tracking
+                        </div>
+                        <button class="modal-btn ${dayData.ovulation ? 'active' : ''}" 
+                                onclick="app.toggleOvulation('${dateStr}')">
+                            🥚 ${dayData.ovulation ? 'Ovulation Day ✓' : 'Mark Ovulation'}
+                        </button>
+                    </div>
                 </div>
                 
-                ${hasData ? `<div class="danger-zone">
-                    <button class="modal-btn danger" onclick="app.clearDayData('${dateStr}')">
-                        🗑️ Clear All Data
-                    </button>
-                </div>` : ''}
+                ${(dayData.period || dayData.ovulation || dayData.mood || (dayData.notes && dayData.notes.trim())) ? `
+                    <div class="danger-zone" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #F0E6F7;">
+                        <button class="modal-btn danger" onclick="app.clearDayData('${dateStr}')">
+                            🗑️ Clear All Data
+                        </button>
+                    </div>
+                ` : ''}
                 
                 ${predictionInfo ? '<p class="prediction-note">💡 Predictions are based on your cycle history</p>' : ''}
             </div>
         `);
         this.showModal(modal);
+    }
+    
+    // Legacy method for compatibility
+    showDayModal(dateStr) {
+        this.showDailyLogModal(dateStr);
+    }
+
+    renderMoodOptions(dateStr, currentMood) {
+        const moods = [
+            { id: 'happy', emoji: '😊', label: 'Happy' },
+            { id: 'excited', emoji: '🤩', label: 'Excited' },
+            { id: 'calm', emoji: '😌', label: 'Calm' },
+            { id: 'sad', emoji: '😢', label: 'Sad' },
+            { id: 'anxious', emoji: '😰', label: 'Anxious' },
+            { id: 'angry', emoji: '😠', label: 'Angry' },
+            { id: 'tired', emoji: '😴', label: 'Tired' },
+            { id: 'energetic', emoji: '⚡', label: 'Energetic' },
+            { id: 'cranky', emoji: '😤', label: 'Cranky' }
+        ];
+        
+        return moods.map(mood => `
+            <div class="mood-option ${currentMood === mood.id ? 'selected' : ''}" 
+                 onclick="app.setMood('${dateStr}', '${mood.id}')">
+                <div class="mood-emoji">${mood.emoji}</div>
+                <div class="mood-label">${mood.label}</div>
+            </div>
+        `).join('');
     }
 
     showSettingsModal() {
@@ -724,7 +882,8 @@ class OogCycleApp {
             delete this.cycleData[dateStr];
             this.saveCycleData();
             this.recalculatePredictions();
-            this.closeModal();
+            this.renderCalendar();
+            this.showDailyLogModal(dateStr); // Refresh the modal to show empty state
             this.showSuccessMessage('Day data cleared! 🗑️');
         }
     }
@@ -993,16 +1152,7 @@ class OogCycleApp {
         this.showSuccessMessage(`Mood logged: ${mood} 💭`);
     }
 
-    togglePeriod(dateStr) {
-        if (!this.cycleData[dateStr]) {
-            this.cycleData[dateStr] = {};
-        }
-        
-        this.cycleData[dateStr].period = !this.cycleData[dateStr].period;
-        this.saveCycleData();
-        this.recalculatePredictions();
-        this.closeModal();
-    }
+
 
     toggleOvulation(dateStr) {
         if (!this.cycleData[dateStr]) {
@@ -1012,7 +1162,148 @@ class OogCycleApp {
         this.cycleData[dateStr].ovulation = !this.cycleData[dateStr].ovulation;
         this.saveCycleData();
         this.renderCalendar();
-        this.closeModal();
+        this.showDailyLogModal(dateStr); // Refresh the modal
+    }
+
+    // ===== NEW ENHANCED LOGGING METHODS =====
+    
+    /**
+     * Set blood flow level for a specific date
+     * @param {string} dateStr - Date in YYYY-MM-DD format
+     * @param {number} flowLevel - Flow level (1=light, 2=medium, 3=heavy)
+     */
+    setFlow(dateStr, flowLevel) {
+        if (!this.cycleData[dateStr]) {
+            this.cycleData[dateStr] = {};
+        }
+        
+        // Toggle flow level - if same level is selected, remove it
+        if (this.cycleData[dateStr].flow === flowLevel) {
+            delete this.cycleData[dateStr].flow;
+        } else {
+            this.cycleData[dateStr].flow = flowLevel;
+        }
+        
+        this.saveCycleData();
+        this.renderCalendar();
+        this.showDailyLogModal(dateStr); // Refresh the modal
+        
+        const flowLabels = { 1: 'Light', 2: 'Medium', 3: 'Heavy' };
+        const label = this.cycleData[dateStr].flow ? flowLabels[flowLevel] : 'None';
+        this.showSuccessMessage(`Flow updated: ${label} 💧`);
+    }
+    
+    /**
+     * Set mood for a specific date
+     * @param {string} dateStr - Date in YYYY-MM-DD format
+     * @param {string} mood - Mood identifier
+     */
+    setMood(dateStr, mood) {
+        if (!this.cycleData[dateStr]) {
+            this.cycleData[dateStr] = {};
+        }
+        
+        // Toggle mood - if same mood is selected, remove it
+        if (this.cycleData[dateStr].mood === mood) {
+            delete this.cycleData[dateStr].mood;
+            this.showSuccessMessage('Mood cleared 💭');
+        } else {
+            this.cycleData[dateStr].mood = mood;
+            const moodLabels = {
+                'happy': 'Happy', 'excited': 'Excited', 'calm': 'Calm',
+                'sad': 'Sad', 'anxious': 'Anxious', 'angry': 'Angry',
+                'tired': 'Tired', 'energetic': 'Energetic', 'cranky': 'Cranky'
+            };
+            this.showSuccessMessage(`Mood logged: ${moodLabels[mood]} 😊`);
+        }
+        
+        this.saveCycleData();
+        this.renderCalendar();
+        this.showDailyLogModal(dateStr); // Refresh the modal
+    }
+    
+    /**
+     * Save notes for a specific date
+     * @param {string} dateStr - Date in YYYY-MM-DD format
+     * @param {string} notes - Notes text
+     */
+    saveNotes(dateStr, notes) {
+        if (!this.cycleData[dateStr]) {
+            this.cycleData[dateStr] = {};
+        }
+        
+        if (notes && notes.trim()) {
+            this.cycleData[dateStr].notes = notes.trim();
+            this.debounceSuccessMessage('Notes saved 📝');
+        } else {
+            delete this.cycleData[dateStr].notes;
+            this.debounceSuccessMessage('Notes cleared 📝');
+        }
+        
+        this.saveCycleData();
+        this.renderCalendar();
+    }
+    
+    /**
+     * Debounced success message to avoid spam while typing
+     */
+    debounceSuccessMessage(message) {
+        if (this.notesTimeout) {
+            clearTimeout(this.notesTimeout);
+        }
+        
+        this.notesTimeout = setTimeout(() => {
+            this.showSuccessMessage(message);
+        }, 1000);
+    }
+    
+    /**
+     * Enhanced togglePeriod that refreshes the modal
+     */
+    togglePeriod(dateStr) {
+        if (!this.cycleData[dateStr]) {
+            this.cycleData[dateStr] = {};
+        }
+        
+        this.cycleData[dateStr].period = !this.cycleData[dateStr].period;
+        
+        // If period is turned off, also remove flow data
+        if (!this.cycleData[dateStr].period && this.cycleData[dateStr].flow) {
+            delete this.cycleData[dateStr].flow;
+        }
+        
+        this.saveCycleData();
+        this.recalculatePredictions();
+        this.showDailyLogModal(dateStr); // Refresh the modal
+        
+        const action = this.cycleData[dateStr].period ? 'marked' : 'unmarked';
+        this.showSuccessMessage(`Period ${action} 🩸`);
+    }
+
+    // ===== QUICK ACTION METHODS =====
+    
+    /**
+     * Quick log for today - opens today's daily log modal
+     */
+    quickLogToday() {
+        const today = this.formatDate(new Date());
+        this.showDailyLogModal(today);
+    }
+    
+    /**
+     * Quick mood tracking for today - opens today's daily log modal with focus on mood
+     */
+    quickTrackTodayMood() {
+        const today = this.formatDate(new Date());
+        this.showDailyLogModal(today);
+        
+        // Small delay to ensure modal is rendered, then scroll to mood section
+        setTimeout(() => {
+            const moodSection = document.querySelector('.log-section:nth-child(2)');
+            if (moodSection) {
+                moodSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
     }
 
     // ===== STORAGE =====
