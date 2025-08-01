@@ -526,6 +526,45 @@ body {
     }
 }
 
+/* Mobile Modal Improvements */
+@media (max-width: 430px) {
+    .daily-log-sections {
+        gap: 1.25rem;
+    }
+    
+    .log-section {
+        padding: 1rem;
+    }
+    
+    .section-title {
+        font-size: 0.95rem;
+        margin-bottom: 0.875rem;
+    }
+    
+    .notes-input {
+        min-height: 70px;
+        padding: 0.875rem;
+        font-size: 0.85rem;
+    }
+    
+    .flow-indicators {
+        gap: 0.5rem;
+    }
+    
+    .flow-option {
+        padding: 0.875rem;
+        min-width: 70px;
+    }
+    
+    .mood-grid {
+        gap: 0.625rem;
+    }
+    
+    .mood-option {
+        padding: 0.875rem 0.5rem;
+    }
+}
+
 /* ===== ACCESSIBILITY ===== */
 @media (prefers-reduced-motion: reduce) {
     * {
@@ -747,6 +786,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    min-height: 200px;
 }
 
 .log-section {

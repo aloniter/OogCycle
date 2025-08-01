@@ -415,15 +415,16 @@ class OogCycleApp {
                         </div>
                     </div>
                     
-                    <!-- Other Tracking -->
+                    <!-- Ovulation Tracking -->
                     <div class="log-section">
                         <div class="section-title">
-                            🌟 Other Tracking
+                            🥚 Ovulation Tracking
                         </div>
                         <button class="modal-btn ${dayData.ovulation ? 'active' : ''}" 
                                 onclick="app.toggleOvulation('${dateStr}')">
-                            🥚 ${dayData.ovulation ? 'Ovulation Day ✓' : 'Mark Ovulation'}
+                            ${dayData.ovulation ? '✅ Ovulation Day' : '🥚 Mark as Ovulation Day'}
                         </button>
+                        ${dayData.ovulation ? '<p style="font-size: 0.85rem; color: #4A7C59; margin-top: 0.5rem; text-align: center;">📈 This helps predict your fertile window</p>' : ''}
                     </div>
                 </div>
                 
@@ -511,9 +512,11 @@ class OogCycleApp {
                 background: white;
                 border-radius: 20px;
                 max-width: 90%;
-                max-height: 90%;
+                max-height: 90vh;
                 overflow: hidden;
                 box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                display: flex;
+                flex-direction: column;
             }
             .modal-header {
                 background: linear-gradient(135deg, #FFB6C1 0%, #FFC0CB 100%);
@@ -532,6 +535,26 @@ class OogCycleApp {
             }
             .modal-body {
                 padding: 1.5rem;
+                overflow-y: auto;
+                flex: 1;
+                max-height: calc(90vh - 80px);
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                scrollbar-color: #E8B4E3 #F5E8F7;
+            }
+            .modal-body::-webkit-scrollbar {
+                width: 6px;
+            }
+            .modal-body::-webkit-scrollbar-track {
+                background: #F5E8F7;
+                border-radius: 3px;
+            }
+            .modal-body::-webkit-scrollbar-thumb {
+                background: #E8B4E3;
+                border-radius: 3px;
+            }
+            .modal-body::-webkit-scrollbar-thumb:hover {
+                background: #D4A5D4;
             }
             .modal-btn {
                 display: block;
